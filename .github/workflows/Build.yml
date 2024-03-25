@@ -1,0 +1,29 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: [self-hosted] 
+    env:
+      DOTNET_INSTALL_DIR: "c:/tmp/action_runner_dotnet"
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.x.x
+    - name: Change to project directory
+      run: cd C:\Users\mafeeslv\source\repos\PruebaRelease
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore --output ./build_output
+    - name: Test
+      run: dotnet test --no-build --verbosity normal

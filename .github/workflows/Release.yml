@@ -1,0 +1,23 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Move Files
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    branches:
+      - master
+    types:
+      - completed
+
+jobs:
+  move_to_specific_folder:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Move files to specific folder
+      run: move /S <source_directory> C:\Users\mafeeslv\Downloads
+
