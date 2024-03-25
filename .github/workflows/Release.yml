@@ -20,5 +20,5 @@ jobs:
       uses: actions/checkout@v3
     - name: Copy repository to specific folder
       run: |
-        robocopy ${{ github.workspace }} "C:\Users\mafeeslv\Documents\CarpetaPipeline" /E /LOG:"C:\Users\mafeeslv\Desktop\Log"
+        robocopy ${{ github.workspace }} "C:\Users\mafeeslv\Documents\CarpetaPipeline" /E 
 
