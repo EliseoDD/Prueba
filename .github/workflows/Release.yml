@@ -1,7 +1,7 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: Move Files
+name: Realese
 
 on:
   workflow_run:
@@ -12,12 +12,13 @@ on:
       - completed
 
 jobs:
-  move_to_specific_folder:
+  copy_repository:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: [self-hosted]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-    - name: Move files to specific folder
-      run: move /S "Prueba" "C:\Users\mafeeslv\Downloads"
+    - name: Copy repository to specific folder
+      run: |
+        robocopy ${{ github.workspace }} "C:\Users\mafeeslv\Downloads\Repository" /E
 
