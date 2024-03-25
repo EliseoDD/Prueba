@@ -19,5 +19,5 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Move files to specific folder
-      run: move /S <source_directory> C:\Users\mafeeslv\Downloads
+      run: move /S "Prueba" "C:\Users\mafeeslv\Downloads"
 
