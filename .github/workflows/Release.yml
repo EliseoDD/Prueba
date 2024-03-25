@@ -7,7 +7,7 @@ on:
   workflow_run:
     workflows: ["Build"]
     branches:
-      - master
+      - main
     types:
       - completed
 
@@ -17,7 +17,7 @@ jobs:
     runs-on: [self-hosted]
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Move files to specific folder
       run: move /S <source_directory> C:\Users\mafeeslv\Downloads
 
