@@ -1,8 +1,8 @@
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   build-and-deploy:
@@ -10,11 +10,11 @@ jobs:
 
     env: 
       # set apppool and site name from IIS
-      AppPoolName : PruebaSelenium
-      SiteName  : 'PruebaSelenium'
-      SitePublishName  :  'PruebaSelenium'
+      AppPoolName : PruebaPL
+      SiteName  : 'PruebaPL'
+      SitePublishName  :  'PruebaPL'
       # set to site files.  In this case, the part of the path after f:/websites/
-      SitePath :  C:\PruebaSel
+      SitePath :  C:\PruebaPL
 
     steps:
       - uses: actions/checkout@v3
@@ -38,7 +38,7 @@ jobs:
           do{
             echo "Attempting file copy $currentRetry"  
             try {
-              Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\Users\psabronet\Documents\PruebaPipeline' -Recurse -Force
+              Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force
               $success = $true;
             }
             catch {
