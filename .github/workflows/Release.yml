@@ -1,24 +1,95 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: Release
-
 on:
-  workflow_run:
-    workflows: ["Build"]
-    branches:
-      - main
-    types:
-      - completed
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
-  copy_repository:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: [self-hosted]
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Copy repository to specific folder
-      run: |
-        robocopy ${{ github.workspace }} "C:\Users\mafeeslv\Documents\CarpetaPipeline" /E 
+  build-and-deploy:
+    runs-on: self-hosted
 
+    env: 
+      # set apppool and site name from IIS
+      AppPoolName : PruebaSelenium
+      SiteName  : 'PruebaSelenium'
+      SitePublishName  :  'PruebaSelenium'
+      # set to site files.  In this case, the part of the path after f:/websites/
+      SitePath :  C:\PruebaSel
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build
+        run: dotnet build --configuration Release .
+
+      - name: dotnet publish 
+        run: | 
+          dotnet publish -c Release -o ${{env.SitePublishName}}Publish .
+    
+      - name: Sleep for 5 seconds
+        run: Start-Sleep -s 5 
+
+      - name: Copy Files
+        run: |
+          $currentRetry = 3;
+          $backupRetry = 3;
+          $success = $false;
+          $backupSuccess = $false;
+          do{
+            echo "Attempting file copy $currentRetry"  
+            try {
+              Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\Users\psabronet\Documents\PruebaPipeline' -Recurse -Force
+              $success = $true;
+            }
+            catch {
+              echo "Copy Failed due to following Catch error:`n"
+              echo $PSItem.Exception.Message
+              echo "`n"
+              Start-Sleep -s 2
+              $currentRetry = $currentRetry + 1;
+            }
+            finally {
+              if ($currentRetry -ge 10) {
+                  echo "Copy keeps failing; restarting AppPool/Site as last resort`n"
+                  echo "Attempting to restart AppPool`n"
+                  do{
+                      $status = Get-WebAppPoolState -name '${{env.AppPoolName}}'
+                      if ($status.Value -eq "Stopped") {
+                          start-WebAppPool ${{env.AppPoolName}}
+                          echo "AppPool restarted`n---------`n"
+                          $backupSuccess = $true;
+                      }
+                      else {
+                          if ($backupRetry -ge 10) {
+                             throw "AppPool restart keeps failing. Please look into Malfurion"
+                          }
+                          echo "AppPool not stopped yet; Re-attempt #$backupRetry"
+                          Start-Sleep -s 3
+                          $backupRetry = $backupRetry + 1;
+                      }
+                  }
+                  while (!$backupSuccess -and $backupRetry -le 10)
+                  $backupRetry = 1;
+                  $backupSuccess = $false;
+                  echo "Attempting to restart Website`n"
+                  do{
+                      $status = Get-WebsiteState -name '${{env.SiteName}}'
+                      if ($status.Value -eq "Stopped") {
+                          start-iissite ${{env.SiteName}}
+                          echo "Website restarted`n---------`n"
+                          $backupSuccess = $true;
+                      }
+                      else {
+                          if ($backupRetry -ge 10) {
+                             throw "Website restart keeps failing. Please look into Server"
+                          }
+                          echo "Website not stopped yet; Re-attempt #$backupRetry"
+                          Start-Sleep -s 3
+                          $backupRetry = $backupRetry + 1;
+                      }
+                  }
+                  while (!$backupSuccess -and $backupRetry -le 10)
+              }
+            }
+          }
+          while (!$success -and $currentRetry -le 10)
