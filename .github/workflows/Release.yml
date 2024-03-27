@@ -29,12 +29,67 @@ jobs:
       - name: Sleep for 5 seconds
         run: Start-Sleep -s 5 
 
-      - name: Deploy to IIS
+
+      - name: Copy Files
         run: |
-          stop-webapppool {AppPoolName}
-          stop-iissite -Name {SiteName} -Confirm: $false
-          Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
-          $success = $true;
-          start-webapppool {AppPoolName}
-          start-iissite {SiteName}
-          
+          $currentRetry = 1;
+          $backupRetry = 1;
+          $success = $false;
+          $backupSuccess = $false;
+          do{
+            echo "Attempting file copy $currentRetry"  
+            try {
+              Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
+              $success = $true;
+            }
+            catch {
+              echo "Copy Failed due to following Catch error:`n"
+              echo $PSItem.Exception.Message
+              echo "`n"
+              Start-Sleep -s 2
+              $currentRetry = $currentRetry + 1;
+            }
+            finally {
+              if ($currentRetry -ge 10) {
+                  echo "Copy keeps failing; restarting AppPool/Site as last resort`n"
+                  echo "Attempting to restart AppPool`n"
+                  do{
+                      $status = Get-WebAppPoolState -name '${{env.AppPoolName}}'
+                      if ($status.Value -eq "Stopped") {
+                          start-WebAppPool ${{env.AppPoolName}}
+                          echo "AppPool restarted`n---------`n"
+                          $backupSuccess = $true;
+                      }
+                      else {
+                          if ($backupRetry -ge 10) {
+                             throw "AppPool restart keeps failing. Please look into Malfurion"
+                          }
+                          echo "AppPool not stopped yet; Re-attempt #$backupRetry"
+                          Start-Sleep -s 3
+                          $backupRetry = $backupRetry + 1;
+                      }
+                  }
+                  while (!$backupSuccess -and $backupRetry -le 10)
+                  $backupRetry = 1;
+                  $backupSuccess = $false;
+                  echo "Attempting to restart Website`n"
+                  do{
+                      $status = Get-WebsiteState -name '${{env.SiteName}}'
+                      if ($status.Value -eq "Stopped") {
+                          start-iissite ${{env.SiteName}}
+                          echo "Website restarted`n---------`n"
+                          $backupSuccess = $true;
+                      }
+                      else {
+                          if ($backupRetry -ge 10) {
+                             throw "Website restart keeps failing. Please look into Server"
+                          }
+                          echo "Website not stopped yet; Re-attempt #$backupRetry"
+                          Start-Sleep -s 3
+                          $backupRetry = $backupRetry + 1;
+                      }
+                  }
+                  while (!$backupSuccess -and $backupRetry -le 10)
+              }
+            }
+          }
