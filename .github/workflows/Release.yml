@@ -31,8 +31,8 @@ jobs:
 
       - name: Copy Files
         run: |
-          $currentRetry = 3;
-          $backupRetry = 3;
+          $currentRetry = 1;
+          $backupRetry = 1;
           $success = $false;
           $backupSuccess = $false;
           do{
