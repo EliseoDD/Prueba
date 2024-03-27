@@ -39,8 +39,10 @@ jobs:
           do{
             echo "Attempting file copy $currentRetry"  
             try {
+              iisreset /stop
               Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
               $success = $true;
+              iisreset /start
             }
             catch {
               echo "Copy Failed due to following Catch error:`n"
