@@ -93,3 +93,4 @@ jobs:
               }
             }
           }
+          while (!$success -and $currentRetry -le 10)
