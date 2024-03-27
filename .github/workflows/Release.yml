@@ -38,6 +38,7 @@ jobs:
           do{
             echo "Attempting file copy $currentRetry"  
             try {
+              Delete-item 'C:\PruebaPl' -Recurse -Force
               Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
               $success = $true;
             }
