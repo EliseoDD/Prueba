@@ -30,32 +30,68 @@ jobs:
         run: Start-Sleep -s 5 
 
 
-      - name: Deploy to IIS
+      - name: Copy Files
         run: |
-          if ((Get-WebSiteState -Name AspNetCoreAPI).Value -eq "Started")
-          {
-              Stop-SiteName -Name AspNetCoreAPI
-              echo "Stopped Website AspNetCoreAPI"
+          $currentRetry = 1;
+          $backupRetry = 1;
+          $success = $false;
+          $backupSuccess = $false;
+          do{
+            echo "Attempting file copy $currentRetry"  
+            try {
+              Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
+              $success = $true;
+            }
+            catch {
+              echo "Copy Failed due to following Catch error:`n"
+              echo $PSItem.Exception.Message
+              echo "`n"
+              Start-Sleep -s 2
+              $currentRetry = $currentRetry + 1;
+            }
+            finally {
+              if ($currentRetry -ge 10) {
+                  echo "Copy keeps failing; restarting AppPool/Site as last resort`n"
+                  echo "Attempting to restart AppPool`n"
+                  do{
+                      $status = Get-WebAppPoolState -name '${{env.AppPoolName}}'
+                      if ($status.Value -eq "Stopped") {
+                          start-WebAppPool ${{env.AppPoolName}}
+                          echo "AppPool restarted`n---------`n"
+                          $backupSuccess = $true;
+                      }
+                      else {
+                          if ($backupRetry -ge 10) {
+                             throw "AppPool restart keeps failing. Please look into Malfurion"
+                          }
+                          echo "AppPool not stopped yet; Re-attempt #$backupRetry"
+                          Start-Sleep -s 3
+                          $backupRetry = $backupRetry + 1;
+                      }
+                  }
+                  while (!$backupSuccess -and $backupRetry -le 10)
+                  $backupRetry = 1;
+                  $backupSuccess = $false;
+                  echo "Attempting to restart Website`n"
+                  do{
+                      $status = Get-WebsiteState -name '${{env.SiteName}}'
+                      if ($status.Value -eq "Stopped") {
+                          start-iissite ${{env.SiteName}}
+                          echo "Website restarted`n---------`n"
+                          $backupSuccess = $true;
+                      }
+                      else {
+                          if ($backupRetry -ge 10) {
+                             throw "Website restart keeps failing. Please look into Server"
+                          }
+                          echo "Website not stopped yet; Re-attempt #$backupRetry"
+                          Start-Sleep -s 3
+                          $backupRetry = $backupRetry + 1;
+                      }
+                  }
+                  while (!$backupSuccess -and $backupRetry -le 10)
+              }
+            }
           }
-          if ((Get-WebAppPoolState -Name AspNetCoreAPI).Value -eq "Started")
-          {
-              Stop-AppPoolName -Name AspNetCoreAPI
-              echo "Stopped Application Pool AspNetCoreAPI"
-          }
-          
-          Start-Sleep -s 15        
-          Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
-          $success = $true;
-          
-          if ((Get-WebSiteState -Name AspNetCoreAPI).Value -eq "Stopped")
-          {
-              Start-SiteName -Name AspNetCoreAPI
-              echo "Started Website AspNetCoreAPI"
-          }
-          if ((Get-WebAppPoolState -Name AspNetCoreAPI).Value -eq "Stopped")
-          {
-              Start-AppPoolName -Name AspNetCoreAPI
-              echo "Started Application Pool AspNetCoreAPI"
-          }
-          
-          if ($lastexitcode -lt 8) { $global:lastexitcode = 0 }
+          while (!$success -and $currentRetry -le 10)
+
