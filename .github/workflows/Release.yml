@@ -39,9 +39,11 @@ jobs:
           do{
             echo "Attempting file copy $currentRetry"  
             try {
-              iisreset /stop
+              iisreset /stop  #Para el servidor de IIS 
+              Copy-Item  'C:\actions-runner\_work\Offline' 'C:\PruebaPL' -Force
+              run: Start-Sleep -s 5 
               Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
-              iisreset /start
+              iisreset /start #Inicia el servidor de IIS
               $success = $true;
             }
             catch {
