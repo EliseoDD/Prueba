@@ -30,7 +30,7 @@ jobs:
         run: Start-Sleep -s 5 
 
       - name: Copiar página de mantenimiento
-        run: Copy-Item 'C:\actions-runner\_work\Offline' 'C:\PruebaPL' -Force
+        run: Copy-Item 'C:\actions-runner\_work\Offline\App_offline.htm' 'C:\PruebaPL' -Force
 
       - name: Copy Files
         run: |
