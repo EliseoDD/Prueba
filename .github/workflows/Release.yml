@@ -39,7 +39,9 @@ jobs:
           do{
             echo "Attempting file copy $currentRetry"  
             try {
+              iisreset /stop
               Copy-Item ./${{env.SitePublishName}}Publish/* 'C:\PruebaPL' -Recurse -Force 
+              iisreset /start
               $success = $true;
             }
             catch {
