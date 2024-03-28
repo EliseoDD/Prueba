@@ -42,7 +42,6 @@ jobs:
               Copy-Item 'C:\actions-runner\_work\Offline\App_offline.htm' 'C:\PruebaPL' -Force
               iisreset /stop  # Para el servidor de IIS
               Copy-Item ".\${env:SitePublishName}Publish\*" 'C:\PruebaPL' -Recurse -Force
-              Copy-Item 'C:\PruebaPL'  'C:\actions-runner\_work\Offline\App_offline.htm' -Force
               iisreset /start # Inicia el servidor de IIS
               $success = $true
             }
