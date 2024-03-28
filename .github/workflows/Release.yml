@@ -29,6 +29,8 @@ jobs:
       - name: Sleep for 5 seconds
         run: Start-Sleep -s 5 
 
+      - name: Copiar página de mantenimiento
+        run: Copy-Item 'C:\actions-runner\_work\Offline' 'C:\PruebaPL' -Force
 
       - name: Copy Files
         run: |
@@ -39,7 +41,6 @@ jobs:
           do{
             echo "Attempting file copy $currentRetry"  
             try {
-              Copy-Item 'C:\actions-runner\_work\Offline\App_offline.htm' 'C:\PruebaPL' -Force
               iisreset /stop  # Para el servidor de IIS
               Copy-Item ".\${env:SitePublishName}Publish\*" 'C:\PruebaPL' -Recurse -Force
               iisreset /start # Inicia el servidor de IIS
@@ -97,4 +98,9 @@ jobs:
             }
           }
           while (!$success -and $currentRetry -le 10)
+
+
+      - name: Eliminar página de mantenimiento
+        run: Remove-Item 'C:\PruebaPL\App_offline.htm'
+
 
